@@ -15,12 +15,10 @@ router = APIRouter(
     tags=["users"]
 )
 
-
-
 @router.post("/register", response_model=UserResponse)
 def register(user:UserCreate, db: Session = Depends(get_db)):
     hashed = hashed_password(user.password)
-    new_user = User(username=user.username, email=user.email, hashed_password=hashed)
+    new_user = User(username=user.username, email=user.email, hashed_password=hashed,role=user.role)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -33,9 +31,7 @@ def login(
     db: Session = Depends(get_db)
 ):
 
-    user = db.query(User).filter(
-        User.username == form_data.username
-    ).first()
+    user = db.query(User).filter(User.username == form_data.username).first()
 
     if not user:
         raise HTTPException(
@@ -53,7 +49,10 @@ def login(
         )
 
     token = create_access_token(
-        {"sub": user.username}
+        {
+            "sub": user.username,
+            "role": user.role
+        }
     )
 
     return {

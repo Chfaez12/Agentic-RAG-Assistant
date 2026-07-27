@@ -15,69 +15,73 @@ router = APIRouter(
     tags=["users"]
 )
 
+from app.auth.roles import require_admin
 
-@router.get("/")
-def get_users(db: Session = Depends(get_db)):
+@router.get("/", response_model=list[UserResponse])
+def get_users(
+    admin: User = Depends(require_admin),
+    db: Session = Depends(get_db)
+):
     users = db.query(User).all()
-
-    return {
-        "database_connected": True,
-        "total_users": len(users),
-        "users": users
-    }
-
-@router.post("/", response_model=UserResponse)
-def create_user(user: UserCreate, db: Session = Depends(get_db)):
-    hashed_pwd = hashed_password(user.password)
-    new_user = User(username=user.username, email=user.email,hashed_password=hashed_pwd)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
-
-@router.get("/{user_id}", response_model=UserResponse)
-def get_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
+    return users
 
 @router.put("/{user_id}", response_model=UserResponse)
-def update_user(user_id: int, user: UserCreate, db: Session = Depends(get_db)):
+def update_user(
+    user_id: int,
+    user: UserCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     existing_user = db.query(User).filter(User.id == user_id).first()
+
     if not existing_user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied"
+        )
+
     existing_user.username = user.username
     existing_user.email = user.email
     existing_user.hashed_password = hashed_password(user.password)
 
+    if current_user.role == "admin":
+        existing_user.role = user.role
+
     db.commit()
     db.refresh(existing_user)
-    return user
+
+    return existing_user
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.id==user_id).first()
+def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    user = db.query(User).filter(User.id == user_id).first()
+
     if not user:
-        raise HTTPException(status_code=404, detail="not found")
+        raise HTTPException(
+            status_code=404,
+            detail="User not found"
+        )
+
+    
+    if current_user.role != "admin" and current_user.id != user_id:
+        raise HTTPException(
+            status_code=403,
+            detail="Permission denied"
+        )
 
     db.delete(user)
     db.commit()
-    return ("User deleted")
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    return {
+        "message": "User deleted successfully"
+    }
