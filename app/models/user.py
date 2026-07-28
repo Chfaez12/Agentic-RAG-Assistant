@@ -14,11 +14,11 @@ class User(Base):
     posts = relationship(
         "Post",
         back_populates="owner",
-        cascade="all, delete"
+        cascade="all, delete-orphan"
     )
 
     comments = relationship(
         "Comment",
         back_populates="user",
-        cascade="all, delete"
+        cascade="all, delete-orphan"
     )

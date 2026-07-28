@@ -23,5 +23,5 @@ class Post(Base):
     comments = relationship(
         "Comment",
         back_populates="post",
-        cascade="all, delete"
+        cascade="all, delete-orphan"
     )
