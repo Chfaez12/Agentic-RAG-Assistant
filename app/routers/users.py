@@ -9,13 +9,12 @@ from app.auth.hashing import hashed_password,verify_password
 from fastapi.security import OAuth2PasswordRequestForm
 from app.auth.jwt_handler import create_access_token
 from app.auth.dependencies import get_current_user
+from app.auth.roles import require_admin
 
 router = APIRouter(
     prefix="/users",
     tags=["users"]
 )
-
-from app.auth.roles import require_admin
 
 @router.get("/", response_model=list[UserResponse])
 def get_users(

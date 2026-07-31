@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from fastapi import Depends
+from fastapi import Depends,status
 from app.dependencies.database import get_db
 from app.models import user
 from app.models.user import User
@@ -15,7 +15,7 @@ router = APIRouter(
     tags=["users"]
 )
 
-@router.post("/register", response_model=UserResponse)
+@router.post("/register", response_model=UserResponse,status_code=status.HTTP_201_CREATED)
 def register(user:UserCreate, db: Session = Depends(get_db)):
     hashed = hashed_password(user.password)
     new_user = User(username=user.username, email=user.email, hashed_password=hashed,role=user.role)
@@ -64,5 +64,5 @@ def login(
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
     return current_user
-
+##
 
