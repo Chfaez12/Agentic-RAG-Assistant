@@ -6,21 +6,32 @@ from app.models import User, Post, Comment
 from app.routers.users import router as user_router
 from app.routers.auth import router as auth_router
 from app.middleware.logger import log_requests
-from app.routers.posts import router as postrouter
-from app.routers.comments import router as commentrouter
+
+
+from app.routers import documents
+from app.routers import agent
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
-    title="Project 2 API",
+    title="DocOps Agent API",
     version="1.0.0"
 )
 
 app.include_router(auth_router)
 app.include_router(user_router)
 
-app.include_router(postrouter)
-app.include_router(commentrouter)
+
+app.include_router(documents.router)
+
+app.include_router(agent.router)
+
+@app.get("/")
+def root():
+    return {
+        "message": "DocOps Agent API is running"
+    }
+
 
 app.middleware("http")(log_requests)
 
