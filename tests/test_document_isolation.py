@@ -1,34 +1,41 @@
-from app.agent.graph import route_after_plan
+from unittest.mock import MagicMock, patch
+from app.rag.retrieval import retrieve_user_documents
 
 
-def test_document_query_routes_to_retrieval():
+def test_user_cannot_access_another_users_documents():
 
-    state = {
-        "plan": "retrieval"
-    }
+    mock_vector_store = MagicMock()
 
-    result = route_after_plan(state)
+    mock_vector_store.similarity_search.return_value = []
 
-    assert result == "retrieval"
+    with patch(
+        "app.rag.retrieval.get_document_vector_store",
+        return_value=mock_vector_store
+    ):
 
+        retrieve_user_documents(
+            query="secret document",
+            user_id=1,
+            k=4
+        )
 
-def test_database_query_routes_to_database():
+    mock_vector_store.similarity_search.assert_called_once()
 
-    state = {
-        "plan": "database"
-    }
+    call_kwargs = (
+        mock_vector_store
+        .similarity_search
+        .call_args
+        .kwargs
+    )
 
-    result = route_after_plan(state)
+    user_filter = call_kwargs["filter"]
 
-    assert result == "database"
+    assert user_filter is not None
 
+    assert user_filter.must
 
-def test_general_query_routes_directly():
+    condition = user_filter.must[0]
 
-    state = {
-        "plan": "direct"
-    }
+    assert condition.key == "metadata.user_id"
 
-    result = route_after_plan(state)
-
-    assert result == "direct"
+    assert condition.match.value == 1

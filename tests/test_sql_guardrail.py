@@ -1,6 +1,4 @@
-from app.guardrails.sql_guardrail import (
-    check_sql_guardrail
-)
+from app.guardrails.sql_guardrail import (check_sql_guardrail)
 
 
 def test_delete_is_blocked():
