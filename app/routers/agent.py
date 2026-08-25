@@ -2,7 +2,6 @@ from fastapi import (APIRouter,Depends,HTTPException)
 
 from app import config
 from langchain_core.messages import (HumanMessage)
-
 from sqlalchemy.orm import Session
 
 from app.auth.dependencies import (get_current_user)
